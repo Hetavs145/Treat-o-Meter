@@ -1,5 +1,15 @@
 # Treat-o-Meter Updates Log
 
+## v1.0.1 - Social Connectivity 🔗
+**Released:** January 11, 2026
+
+### 🔄 Updates
+*   **Footer Links**: Updated official links for Instagram, LinkedIn, and YouTube.
+*   **UX Improvements**: Social links now open in a new tab for better navigation flow.
+
+---
+
+
 ## v1.0.0 - The "Sweet" Release 🍦
 **Released:** January 11, 2026
 

@@ -1,4 +1,4 @@
-# Treat-o-Meter (v1.0.0)
+# Treat-o-Meter (v1.0.1)
 
 A gamified habit tracker and balance manager that helps you "earn" your treats and stay accountable for your bad habits. 🍦
 
