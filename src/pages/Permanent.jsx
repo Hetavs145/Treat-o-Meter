@@ -3,21 +3,23 @@ import React from 'react';
 import { useState, useEffect } from 'react';
 import PermanentQuadrants from '../components/PermanentQuadrants';
 import PermanentTracker from '../components/PermanentTracker';
-import { saveTransaction } from '../utils/storage';
+import {
+    saveTransaction,
+    getTasks,
+    saveTasks,
+    getPermanentIds,
+    savePermanentIds,
+    getPermanentLogs,
+    savePermanentLogs,
+} from '../utils/storage';
 import { AlertTriangle, WifiOff, Loader } from 'lucide-react';
 
 export default function Permanent() {
     const [allTasks, setAllTasks] = useState([]);
-    const [permanentIds, setPermanentIds] = useState(() => {
-        const stored = localStorage.getItem('sweet_treat_permanent_ids');
-        return stored ? JSON.parse(stored) : [];
-    });
+    const [permanentIds, setPermanentIds] = useState(() => getPermanentIds());
 
     // Logs: { "2024-01-09": { "taskId1": "completed" } }
-    const [logs, setLogs] = useState(() => {
-        const stored = localStorage.getItem('sweet_treat_permanent_logs');
-        return stored ? JSON.parse(stored) : {};
-    });
+    const [logs, setLogs] = useState(() => getPermanentLogs());
 
     // --- Task Management (Edit/Delete) ---
 
@@ -25,8 +27,8 @@ export default function Permanent() {
     const handleUpdateTask = (updatedTask) => {
         const newTasks = allTasks.map(t => t.id === updatedTask.id ? updatedTask : t);
         setAllTasks(newTasks);
-        localStorage.setItem('sweet_treat_tasks', JSON.stringify(newTasks));
-        // Force trigger storage event for other tabs/components?
+        saveTasks(newTasks);
+        // Force trigger storage event for other tabs/components
         window.dispatchEvent(new Event('storage'));
     };
 
@@ -37,7 +39,7 @@ export default function Permanent() {
         // 1. Remove from allTasks
         const newTasks = allTasks.filter(t => t.id !== taskId);
         setAllTasks(newTasks);
-        localStorage.setItem('sweet_treat_tasks', JSON.stringify(newTasks));
+        saveTasks(newTasks);
 
         // 2. Remove from Permanent IDs
         setPermanentIds(prev => prev.filter(id => id !== taskId));
@@ -56,13 +58,12 @@ export default function Permanent() {
     // Load tasks from storage
     useEffect(() => {
         const loadTasks = () => {
-            const stored = localStorage.getItem('sweet_treat_tasks');
-            if (stored) {
-                setAllTasks(JSON.parse(stored));
-            }
+            setAllTasks(getTasks());
+            setPermanentIds(getPermanentIds());
+            setLogs(getPermanentLogs());
         };
         loadTasks();
-        window.addEventListener('storage', loadTasks); // Listen for updates
+        window.addEventListener('storage', loadTasks); // Listen for updates (incl. cloud sync pulls)
         return () => window.removeEventListener('storage', loadTasks);
     }, []);
 
@@ -70,8 +71,8 @@ export default function Permanent() {
     useEffect(() => {
         const fetchDate = async () => {
             try {
-                // Try WorldTimeAPI
-                const res = await fetch('http://worldtimeapi.org/api/timezone/Etc/UTC');
+                // Try WorldTimeAPI (https — the http endpoint is blocked as mixed content on an https-served app)
+                const res = await fetch('https://worldtimeapi.org/api/timezone/Etc/UTC');
                 if (!res.ok) throw new Error('API Failed');
                 const data = await res.json();
                 // Convert to user's local timezone approximately for date tracking
@@ -95,12 +96,12 @@ export default function Permanent() {
 
     // Persist Permanent IDs
     useEffect(() => {
-        localStorage.setItem('sweet_treat_permanent_ids', JSON.stringify(permanentIds));
+        savePermanentIds(permanentIds);
     }, [permanentIds]);
 
     // Persist Logs
     useEffect(() => {
-        localStorage.setItem('sweet_treat_permanent_logs', JSON.stringify(logs));
+        savePermanentLogs(logs);
     }, [logs]);
 
     const handleTogglePermanent = (taskId, type) => {

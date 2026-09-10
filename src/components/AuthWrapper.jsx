@@ -1,15 +1,37 @@
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged, signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
+import { setCloudSyncUser, pullCloudData } from '../utils/cloudSync';
 import Background from './Background';
 
 export default function AuthWrapper({ children }) {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [syncing, setSyncing] = useState(false);
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             setUser(currentUser);
+
+            if (currentUser) {
+                setSyncing(true);
+                setCloudSyncUser(currentUser.uid);
+                try {
+                    const changed = await pullCloudData(currentUser.uid);
+                    if (changed) {
+                        // Local data was replaced by the cloud snapshot — let pages re-read it.
+                        window.dispatchEvent(new Event('storage'));
+                        window.dispatchEvent(new Event('balance-updated'));
+                    }
+                } catch (err) {
+                    console.error('Failed to sync with cloud, continuing with local data:', err);
+                } finally {
+                    setSyncing(false);
+                }
+            } else {
+                setCloudSyncUser(null);
+            }
+
             setLoading(false);
         });
         return () => unsubscribe();
@@ -23,7 +45,7 @@ export default function AuthWrapper({ children }) {
         }
     };
 
-    if (loading) return (
+    if (loading || syncing) return (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-cream overflow-hidden">
             <div className="relative">
                 {/* Bouncing Logo */}
@@ -35,7 +57,9 @@ export default function AuthWrapper({ children }) {
                 <h2 className="text-3xl font-black text-black text-outline-white tracking-widest uppercase animate-pulse">
                     Treat-o-Meter
                 </h2>
-                <p className="text-gray-500 font-bold text-sm tracking-widest animate-pulse">LOADING...</p>
+                <p className="text-gray-500 font-bold text-sm tracking-widest animate-pulse">
+                    {syncing ? 'SYNCING YOUR DATA...' : 'LOADING...'}
+                </p>
             </div>
         </div>
     );

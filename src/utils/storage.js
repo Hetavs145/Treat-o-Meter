@@ -1,10 +1,22 @@
+import { queueCloudPush } from './cloudSync';
+
 const STORAGE_KEY = 'sweet_treat_transactions';
 const SETTINGS_KEY = 'sweet_treat_settings';
+const TASKS_KEY = 'sweet_treat_tasks';
+const PERMANENT_IDS_KEY = 'sweet_treat_permanent_ids';
+const PERMANENT_LOGS_KEY = 'sweet_treat_permanent_logs';
 
-export const getTransactions = () => {
-    const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
-};
+function readJSON(key, fallback) {
+    const data = localStorage.getItem(key);
+    return data ? JSON.parse(data) : fallback;
+}
+
+function writeJSON(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+    queueCloudPush();
+}
+
+export const getTransactions = () => readJSON(STORAGE_KEY, []);
 
 export const saveTransaction = (transaction) => {
     const transactions = getTransactions();
@@ -14,7 +26,7 @@ export const saveTransaction = (transaction) => {
         ...transaction
     };
     transactions.push(newTransaction);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+    writeJSON(STORAGE_KEY, transactions);
     return newTransaction;
 };
 
@@ -30,25 +42,19 @@ export const getBalance = () => {
     }, 0);
 };
 
-export const getSettings = () => {
-    const data = localStorage.getItem(SETTINGS_KEY);
-    return data ? JSON.parse(data) : { currency: '₹', customCurrency: '' };
-};
+export const getSettings = () => readJSON(SETTINGS_KEY, { currency: '₹', customCurrency: '' });
 
-export const saveSettings = (settings) => {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-};
+export const saveSettings = (settings) => writeJSON(SETTINGS_KEY, settings);
 
 export const clearHistory = () => {
     localStorage.removeItem(STORAGE_KEY);
+    queueCloudPush();
 };
 
 export const getNetBalance = () => {
     const transactions = getTransactions();
     return transactions.reduce((acc, curr) => {
         // Sum only Rewards that are NOT currency adjustments
-        // We identify currency adjustments by description for now as per previous implementation plan or just description heuristic
-        // Or better, we can check if description includes "Currency Conversion"
         if (curr.type === 'reward' && !curr.isDiscarded && !curr.description.includes('Currency Conversion Adjustment')) {
             return acc + Number(curr.amount);
         }
@@ -56,40 +62,14 @@ export const getNetBalance = () => {
     }, 0);
 };
 
-export const checkMonthlyReset = () => {
-    const LAST_RESET_KEY = 'sweet_treat_last_reset';
-    const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+// --- Tasks (active/queued tasks shown on the Home tab) ---
+export const getTasks = () => readJSON(TASKS_KEY, []);
+export const saveTasks = (tasks) => writeJSON(TASKS_KEY, tasks);
 
-    const lastReset = localStorage.getItem(LAST_RESET_KEY);
-    const now = Date.now();
+// --- Permanent habits ---
+export const getPermanentIds = () => readJSON(PERMANENT_IDS_KEY, []);
+export const savePermanentIds = (ids) => writeJSON(PERMANENT_IDS_KEY, ids);
 
-    if (!lastReset) {
-        localStorage.setItem(LAST_RESET_KEY, now.toString()); // First run / init
-        return;
-    }
-
-    if (now - parseInt(lastReset) > THIRTY_DAYS_MS) {
-        // Time to reset
-        clearHistory(); // Wipes transactions
-
-        // Add a system note (though clearHistory wiped it, we can start fresh)
-        saveTransaction({
-            type: 'reward', // Neutral or specific type? 'reward' adds to balance. 
-            // Wait, clearHistory removes EVERYTHING including balance. 
-            // Usually "statement reset" implies clearing the LOG, but does balance carry over?
-            // "Reset the statement" - statement usually shows transactions.
-            // If we clearHistory, balance becomes 0.
-            // Let's assume balance consumes vanish too? Or should we preserve balance?
-            // "Reset the statement every 30 days!" usually implies a fresh start.
-            // I'll proceed with full clear.
-            amount: 0,
-            description: 'Balance Reset (Monthly Cycle)',
-            isDiscarded: false
-        });
-
-        localStorage.setItem(LAST_RESET_KEY, now.toString());
-        // Return true to indicate reset happened?
-        return true;
-    }
-    return false;
-};
+// Logs shape: { "2024-01-09": { "taskId1": "completed" } }
+export const getPermanentLogs = () => readJSON(PERMANENT_LOGS_KEY, {});
+export const savePermanentLogs = (logs) => writeJSON(PERMANENT_LOGS_KEY, logs);

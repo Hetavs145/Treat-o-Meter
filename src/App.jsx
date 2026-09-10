@@ -10,14 +10,8 @@ import { Home as HomeIcon, History as HistoryIcon } from 'lucide-react';
 
 import Background from './components/Background';
 import { ThemeProvider } from './context/ThemeContext';
-import { useEffect } from 'react';
-import { checkMonthlyReset } from './utils/storage';
 
 function App() {
-  useEffect(() => {
-    checkMonthlyReset();
-  }, []);
-
   return (
     <ThemeProvider>
       <BrowserRouter>

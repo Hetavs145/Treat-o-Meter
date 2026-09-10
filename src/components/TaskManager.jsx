@@ -1,26 +1,19 @@
 import { useState, useEffect } from 'react';
 import { Play, Check, X, Clock, AlertTriangle, Plus, DollarSign, Gift, Minus } from 'lucide-react';
-import { saveTransaction } from '../utils/storage';
+import { saveTransaction, getTasks, saveTasks, getPermanentIds } from '../utils/storage';
 
 export default function TaskManager({ onUpdateBalance, formMode, setFormMode }) {
-    const [tasks, setTasks] = useState(() => {
-        const stored = localStorage.getItem('sweet_treat_tasks');
-        return stored ? JSON.parse(stored) : [];
-    });
+    const [tasks, setTasks] = useState(() => getTasks());
+    const [permanentIds, setPermanentIds] = useState(() => getPermanentIds());
 
-    const [permanentIds, setPermanentIds] = useState(() => {
-        const stored = localStorage.getItem('sweet_treat_permanent_ids');
-        return stored ? JSON.parse(stored) : [];
-    });
-
-    // Listen for storage updates to keep permanent IDs in sync (if changed in Permanent tab)
+    // Listen for storage updates (cross-tab, or a cloud sync pull) to keep
+    // permanent IDs and tasks in sync with the source of truth.
     useEffect(() => {
         const handleStorageChange = () => {
-            const stored = localStorage.getItem('sweet_treat_permanent_ids');
-            if (stored) setPermanentIds(JSON.parse(stored));
+            setPermanentIds(getPermanentIds());
+            setTasks(getTasks());
         };
         window.addEventListener('storage', handleStorageChange);
-        // Also listen for custom event if we add one, but storage event works for cross-tab or strict updates
         return () => window.removeEventListener('storage', handleStorageChange);
     }, []);
 
@@ -43,7 +36,7 @@ export default function TaskManager({ onUpdateBalance, formMode, setFormMode }) 
 
     // Persist tasks
     useEffect(() => {
-        localStorage.setItem('sweet_treat_tasks', JSON.stringify(tasks));
+        saveTasks(tasks);
     }, [tasks]);
 
     // Timer Tick

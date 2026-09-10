@@ -8,18 +8,31 @@ export default {
     theme: {
         extend: {
             colors: {
-                cream: '#FDFCF0',
-                mint: '#D8F3DC',
-                rose: '#FFD6D6',
-                lavender: '#E2E0FF',
+                cream: '#FAF7F2',
+                'cream-elevated': '#F2ECE2',
+                paper: '#FAF7F2',
+                'paper-card': '#FFFFFF',
+                'paper-border': '#E6DED2',
+                espresso: '#231A14',
+                'espresso-muted': '#6B5E52',
+                'amber-treat': '#D97706',
+                'amber-soft': '#FEF3C7',
+                'sage-reward': '#2E7D32',
+                'sage-soft': '#DCFCE7',
+                'crimson-lapse': '#C62828',
+                'crimson-soft': '#FEE2E2',
 
-                // Dark Mode
-                'dark-bg': '#2D1E1A', // Dark Chocolate
-                'dark-text-main': '#EDE0D4',
-                'dark-text-muted': '#D7CCC8',
+                // Dark Truffle Mode
+                'dark-bg': '#171311',
+                'dark-surface': '#201A17',
+                'dark-card': '#29221D',
+                'dark-border': '#3D332C',
+                'dark-text-main': '#F5ECE1',
+                'dark-text-muted': '#A6988D',
             },
             fontFamily: {
                 sans: ['Outfit', 'sans-serif'],
+                display: ['Playfair Display', 'Georgia', 'serif'],
             },
             keyframes: {
                 float: {

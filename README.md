@@ -42,7 +42,8 @@ Refer to it for the latest changes! 😉
 
 **Backend / Services:**
 *   Firebase Authentication (Google Sign-In)
-*   Local Storage (Data Persistence and Privacy)
+*   Cloud Firestore — each user's transactions, tasks, and settings sync to their own private document (`users/{uid}/appData/main`), scoped by Firestore security rules so only that authenticated user can ever read or write it
+*   Local Storage — used as a fast local cache so the app stays instant and works offline; changes queue and push to Firestore in the background, and the newer of the two (local vs. cloud) wins when a device reconnects
 
 ## 🛠️ Local Development
 
@@ -73,8 +74,8 @@ Refer to it for the latest changes! 😉
 
 ## 🔒 Security
 
-*   **Authentication**: Handled entirely via Firebase Auth.
-*   **Data**: Stored locally on the user's device (LocalStorage) for privacy and speed.
+*   **Authentication**: Handled entirely via Firebase Auth (Google Sign-In).
+*   **Data**: Cached locally (LocalStorage) for speed and offline use, and synced to Cloud Firestore under your account so it's backed up and available across devices. Firestore security rules restrict every document to the authenticated owner only — no one else, including other signed-in users, can read or write your data.
 *   **Input Validation**: Strict type checking for reward/punishment values.
 
 ## 🤝 Contributing
